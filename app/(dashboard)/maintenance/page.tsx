@@ -14,8 +14,8 @@ import {
   Wrench,
   DollarSign,
 } from 'lucide-react'
-import { supabase } from '../../../lib/supabase'
-import { getCompanyId } from '../../../lib/company'
+import { supabase } from '../../lib/supabase'
+import { getCompanyId } from '../../lib/company'
 
 type MaintenanceLog = {
   id: string

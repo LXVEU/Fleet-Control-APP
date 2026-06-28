@@ -15,8 +15,8 @@ import {
   Fuel,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { supabase } from '../../lib/supabase'
-import { getCompanyId } from '../../lib/company'
+import { supabase } from '../lib/supabase'
+import { getCompanyId } from '../lib/company'
 
 type Company = {
   id: string

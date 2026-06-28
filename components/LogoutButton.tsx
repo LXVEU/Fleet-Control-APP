@@ -1,7 +1,7 @@
 // components/LogoutButton.tsx
 'use client'
 
-import { supabase } from '../lib/supabase'
+import { supabase } from '../app/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { LogOut } from 'lucide-react'
 

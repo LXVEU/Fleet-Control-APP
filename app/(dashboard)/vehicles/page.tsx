@@ -26,8 +26,8 @@ import {
   AlertTriangle,
   XCircle,
 } from 'lucide-react'
-import { supabase } from '../../../lib/supabase'
-import { getCompanyId } from '../../../lib/company'
+import { supabase } from '../../lib/supabase'
+import { getCompanyId } from '../../lib/company'
 
 // ───────────────── ТИПЫ ─────────────────
 type Status = 'active' | 'warning' | 'critical'

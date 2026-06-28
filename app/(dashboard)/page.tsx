@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '../../lib/supabase'
-import { getCompanyId } from '../../lib/company'
+import { supabase } from '../lib/supabase'
+import { getCompanyId } from '../lib/company'
 import KpiCards from '../../components/KpiCards'
 import SmartAlerts from '../../components/SmartAlerts'
 import ExpensesCharts from '../../components/ExpensesCharts'

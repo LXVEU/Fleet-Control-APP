@@ -2,7 +2,7 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '../../../lib/supabase'
+import { supabase } from '../../lib/supabase'
 import { useRouter } from 'next/navigation'
 import { Building2, LogIn, Mail, Lock } from 'lucide-react'
 import Link from 'next/link'
