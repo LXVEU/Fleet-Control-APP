@@ -21,8 +21,8 @@ import {
   Link2,
   X,
 } from 'lucide-react'
-import { supabase } from '../../../lib/supabase'
-import { getCompanyId } from '../../../lib/company'
+import { supabase } from '@/lib/supabase'
+import { getCompanyId } from '@/lib/company'
 
 type Document = {
   id: string
@@ -494,7 +494,7 @@ export default function DocumentsPage() {
                     fontWeight: 700,
                   }
                   
-                  if (doc.days_remaining !== null) {
+                  if (doc.days_remaining !== undefined && doc.days_remaining !== null) {
                     if (doc.days_remaining < 0) {
                       expiryDateStyle = {
                         color: '#dc2626',
