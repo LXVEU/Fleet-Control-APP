@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Truck, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
-import { supabase } from '../lib/supabase'
-import { getCompanyId } from '../lib/company'
+import { supabase } from '../../lib/supabase'
+import { getCompanyId } from '../../lib/company'
 
 type Vehicle = {
   id: number
@@ -24,6 +25,12 @@ type LastMileage = {
 }
 
 export default function MileageAddPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  
+  // Получаем company_id из URL (если есть)
+  const companyIdFromUrl = searchParams.get('company')
+  
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [company, setCompany] = useState<Company | null>(null)
   const [loading, setLoading] = useState(true)
@@ -39,8 +46,14 @@ export default function MileageAddPage() {
   })
 
   useEffect(() => {
-    loadData()
-  }, [])
+    if (companyIdFromUrl) {
+      // Если есть company в URL — используем её
+      loadData(companyIdFromUrl)
+    } else {
+      // Если нет — пробуем получить из авторизации (для админов)
+      loadDataFromAuth()
+    }
+  }, [companyIdFromUrl])
 
   useEffect(() => {
     if (formData.vehicleId) {
@@ -50,16 +63,19 @@ export default function MileageAddPage() {
     }
   }, [formData.vehicleId])
 
-  async function loadData() {
+  async function loadDataFromAuth() {
     const companyId = await getCompanyId()
-
-    if (!companyId) {
+    if (companyId) {
+      loadData(companyId)
+    } else {
       setLoading(false)
-      setError('Компания не найдена. Пожалуйста, войдите в систему.')
-      return
+      setError('Компания не найдена. Пожалуйста, войдите в систему или используйте ссылку с параметром company.')
     }
+  }
 
+  async function loadData(companyId: string) {
     try {
+      // Загружаем информацию о компании
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .select('id, name')
@@ -68,10 +84,12 @@ export default function MileageAddPage() {
 
       if (companyError) {
         console.error('Ошибка загрузки компании:', companyError)
+        setError('Компания не найдена')
       } else {
         setCompany(companyData)
       }
 
+      // Загружаем технику
       const { data, error } = await supabase
         .from('vehicles')
         .select('id, name, license_plate, meter_type, vehicle_type')
@@ -84,7 +102,7 @@ export default function MileageAddPage() {
       } else {
         setVehicles(data || [])
         if (data && data.length === 0) {
-          setError('Нет зарегистрированной техники. Обратитесь к администратору.')
+          setError('Нет зарегистрированной техники')
         }
       }
     } catch (err) {
@@ -101,7 +119,7 @@ export default function MileageAddPage() {
 
     setLoadingLastMileage(true)
     try {
-      const companyId = await getCompanyId()
+      const companyId = companyIdFromUrl || await getCompanyId()
       if (!companyId) return
 
       const { data, error } = await supabase
@@ -139,7 +157,7 @@ export default function MileageAddPage() {
         throw new Error('Введите корректное значение пробега (больше 0)')
       }
 
-      const companyId = await getCompanyId()
+      const companyId = companyIdFromUrl || await getCompanyId()
       if (!companyId) {
         throw new Error('Компания не найдена')
       }
@@ -149,11 +167,11 @@ export default function MileageAddPage() {
         throw new Error('Выбранная техника не найдена')
       }
 
-      // ─── ПРОВЕРКА: пробег не может быть меньше последнего ───
       if (lastMileage && meterValue < lastMileage.meter_value) {
-        setError(`Ошибка! Новый пробег (${meterValue} ${getUnitLabel(selectedVehicle.meter_type)}) не может быть меньше предыдущего (${lastMileage.meter_value} ${getUnitLabel(selectedVehicle.meter_type)})`)
-        setSubmitting(false)
-        return
+        if (!confirm(`Внимание! Новый пробег (${meterValue}) меньше предыдущего (${lastMileage.meter_value}). Продолжить?`)) {
+          setSubmitting(false)
+          return
+        }
       }
 
       const { error: insertError } = await supabase
@@ -262,30 +280,62 @@ export default function MileageAddPage() {
         position: 'relative',
         zIndex: 1,
       }}>
+        {/* Логотип */}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          alignItems: 'center',
+          marginBottom: 24,
+        }}>
+          <div style={{
+            width: 56,
+            height: 56,
+            borderRadius: 14,
+            background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            boxShadow: '0 4px 16px rgba(37,99,235,0.3)',
+          }}>
+            <Truck size={28} strokeWidth={2} />
+          </div>
+          <div style={{ marginTop: 8, textAlign: 'center' }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px' }}>
+              Добавление пробега
+            </div>
+            {company && (
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#64748b', marginTop: 2 }}>
+                {company.name}
+              </div>
+            )}
+          </div>
+        </div>
+
         {success ? (
           <div style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '20px 0',
+            padding: '30px 20px',
             textAlign: 'center',
           }}>
             <div style={{
-              width: 80,
-              height: 80,
+              width: 72,
+              height: 72,
               borderRadius: '50%',
               background: '#ecfdf5',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}>
-              <CheckCircle size={44} color="#22c55e" />
+              <CheckCircle size={40} color="#22c55e" />
             </div>
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', marginTop: 20, marginBottom: 8 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', marginTop: 16 }}>
               Спасибо, запись отправлена!
             </h2>
-            <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 24 }}>
+            <p style={{ color: '#94a3b8', marginTop: 8, fontSize: 14 }}>
               Данные успешно сохранены
             </p>
             <button
@@ -295,12 +345,13 @@ export default function MileageAddPage() {
                 setLastMileage(null)
               }}
               style={{
-                padding: '10px 40px',
+                marginTop: 20,
+                padding: '10px 32px',
                 borderRadius: 12,
                 border: 'none',
                 background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
                 color: 'white',
-                fontSize: 15,
+                fontSize: 14,
                 fontWeight: 600,
                 cursor: 'pointer',
                 transition: 'all 0.15s',
@@ -310,254 +361,198 @@ export default function MileageAddPage() {
             >
               Добавить еще
             </button>
-            
-            {company && (
-              <div style={{
-                textAlign: 'center',
-                marginTop: 24,
-                fontSize: 12,
-                color: '#94a3b8',
-                fontWeight: 500,
-              }}>
-                {company.name}
-              </div>
-            )}
           </div>
         ) : (
-          <>
-            {/* Заголовок формы */}
-            <div style={{ marginBottom: 28 }}>
+          <form onSubmit={handleSubmit}>
+            {error && (
               <div style={{
-                width: 48,
-                height: 48,
-                borderRadius: 12,
-                background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 12px',
+                gap: 8,
+                padding: '12px 16px',
+                borderRadius: 12,
+                background: '#fef2f2',
+                border: '1px solid #fca5a5',
+                color: '#dc2626',
+                fontSize: 14,
+                marginBottom: 20,
               }}>
-                <Truck size={24} color="white" />
+                <AlertCircle size={18} />
+                {error}
               </div>
-              <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: 0, textAlign: 'center' }}>
-                Добавить пробег
-              </h1>
-              <p style={{ fontSize: 14, color: '#94a3b8', marginTop: 4, textAlign: 'center' }}>
-                Введите данные о пробеге техники
-              </p>
+            )}
+
+            {/* Выбор техники */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ 
+                display: 'block', 
+                fontSize: 14, 
+                fontWeight: 600, 
+                color: '#0f172a', 
+                marginBottom: 6 
+              }}>
+                Техника <span style={{ color: '#dc2626' }}>*</span>
+              </label>
+              <select
+                value={formData.vehicleId}
+                onChange={(e) => setFormData({ ...formData, vehicleId: e.target.value })}
+                required
+                style={{
+                  width: '100%',
+                  padding: '12px 14px',
+                  borderRadius: 12,
+                  border: '1px solid #e2e8f0',
+                  fontSize: 14,
+                  outline: 'none',
+                  transition: 'all 0.15s',
+                  background: 'white',
+                  color: '#0f172a',
+                  cursor: 'pointer',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = '#3b82f6'
+                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = '#e2e8f0'
+                  e.currentTarget.style.boxShadow = 'none'
+                }}
+              >
+                <option value="">Выберите технику</option>
+                {vehicles.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name} ({v.license_plate}) — {getUnitLabel(v.meter_type)}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <form onSubmit={handleSubmit}>
-              {error && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '12px 16px',
-                  borderRadius: 12,
-                  background: '#fef2f2',
-                  border: '1px solid #fca5a5',
-                  color: '#dc2626',
-                  fontSize: 14,
-                  marginBottom: 20,
+            {/* Последний пробег */}
+            {formData.vehicleId && (
+              <div style={{
+                padding: '12px 16px',
+                borderRadius: 12,
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                marginBottom: 16,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}>
+                <span style={{ fontSize: 13, color: '#64748b' }}>
+                  {loadingLastMileage ? 'Загрузка...' : 'Последний пробег'}
+                </span>
+                <span style={{ 
+                  fontSize: 15, 
+                  fontWeight: 700, 
+                  color: lastMileage ? '#0f172a' : '#94a3b8' 
                 }}>
-                  <AlertCircle size={18} />
-                  {error}
-                </div>
-              )}
-
-              {/* Выбор техники */}
-              <div style={{ marginBottom: 20 }}>
-                <label style={{ 
-                  display: 'block', 
-                  fontSize: 14, 
-                  fontWeight: 600, 
-                  color: '#0f172a', 
-                  marginBottom: 6 
-                }}>
-                  Техника <span style={{ color: '#dc2626' }}>*</span>
-                </label>
-                <select
-                  value={formData.vehicleId}
-                  onChange={(e) => setFormData({ ...formData, vehicleId: e.target.value })}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '12px 14px',
-                    borderRadius: 12,
-                    border: '1px solid #e2e8f0',
-                    fontSize: 14,
-                    outline: 'none',
-                    transition: 'all 0.15s',
-                    background: 'white',
-                    color: '#0f172a',
-                    cursor: 'pointer',
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = '#3b82f6'
-                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = '#e2e8f0'
-                    e.currentTarget.style.boxShadow = 'none'
-                  }}
-                >
-                  <option value="">Выберите технику</option>
-                  {vehicles.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.name} ({v.license_plate}) — {getUnitLabel(v.meter_type)}
-                    </option>
-                  ))}
-                </select>
+                  {loadingLastMileage ? (
+                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite', color: '#2563eb' }} />
+                  ) : lastMileage ? (
+                    `${lastMileage.meter_value.toLocaleString()} ${getUnitLabel(selectedVehicle?.meter_type)}`
+                  ) : (
+                    'Нет данных'
+                  )}
+                </span>
               </div>
+            )}
 
-              {/* Последний пробег */}
-              {formData.vehicleId && (
-                <div style={{
-                  padding: '12px 16px',
+            {/* Пробег */}
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ 
+                display: 'block', 
+                fontSize: 14, 
+                fontWeight: 600, 
+                color: '#0f172a', 
+                marginBottom: 6 
+              }}>
+                Пробег <span style={{ color: '#dc2626' }}>*</span>
+              </label>
+              <input
+                type="number"
+                placeholder="Введите значение пробега"
+                value={formData.meterValue}
+                onChange={(e) => setFormData({ ...formData, meterValue: e.target.value })}
+                required
+                min="0"
+                step="0.1"
+                style={{
+                  width: '100%',
+                  padding: '12px 14px',
                   borderRadius: 12,
-                  background: '#f8fafc',
                   border: '1px solid #e2e8f0',
-                  marginBottom: 16,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}>
-                  <span style={{ fontSize: 13, color: '#64748b' }}>
-                    {loadingLastMileage ? 'Загрузка...' : 'Последний пробег'}
-                  </span>
-                  <span style={{ 
-                    fontSize: 15, 
-                    fontWeight: 700, 
-                    color: lastMileage ? '#0f172a' : '#94a3b8' 
-                  }}>
-                    {loadingLastMileage ? (
-                      <Loader2 size={16} style={{ animation: 'spin 1s linear infinite', color: '#2563eb' }} />
-                    ) : lastMileage ? (
-                      `${lastMileage.meter_value.toLocaleString()} ${getUnitLabel(selectedVehicle?.meter_type)}`
-                    ) : (
-                      'Нет данных'
-                    )}
-                  </span>
-                </div>
-              )}
-
-              {/* Пробег */}
-              <div style={{ marginBottom: 24 }}>
-                <label style={{ 
-                  display: 'block', 
-                  fontSize: 14, 
-                  fontWeight: 600, 
-                  color: '#0f172a', 
-                  marginBottom: 6 
-                }}>
-                  Пробег <span style={{ color: '#dc2626' }}>*</span>
-                </label>
-                <input
-                  type="number"
-                  placeholder="Введите значение пробега"
-                  value={formData.meterValue}
-                  onChange={(e) => setFormData({ ...formData, meterValue: e.target.value })}
-                  required
-                  min="0"
-                  step="0.1"
-                  style={{
-                    width: '100%',
-                    padding: '12px 14px',
-                    borderRadius: 12,
-                    border: '1px solid #e2e8f0',
-                    fontSize: 14,
-                    outline: 'none',
-                    transition: 'all 0.15s',
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = '#3b82f6'
-                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = '#e2e8f0'
-                    e.currentTarget.style.boxShadow = 'none'
-                  }}
-                />
-                {formData.vehicleId && (
-                  <div style={{ 
-                    fontSize: 12, 
-                    color: '#94a3b8', 
-                    marginTop: 4,
-                  }}>
+                  fontSize: 14,
+                  outline: 'none',
+                  transition: 'all 0.15s',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = '#3b82f6'
+                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = '#e2e8f0'
+                  e.currentTarget.style.boxShadow = 'none'
+                }}
+              />
+              <div style={{ 
+                fontSize: 12, 
+                color: '#94a3b8', 
+                marginTop: 4,
+              }}>
+                {formData.vehicleId ? (
+                  <>
                     Единица измерения: <strong>{getUnitLabel(selectedVehicle?.meter_type)}</strong>
                     {lastMileage && (
                       <span style={{ marginLeft: 8, color: '#94a3b8' }}>
                         (последний: {lastMileage.meter_value.toLocaleString()})
                       </span>
                     )}
-                  </div>
-                )}
-                {formData.vehicleId && lastMileage && (
-                  <div style={{ 
-                    fontSize: 12, 
-                    color: '#94a3b8', 
-                    marginTop: 2,
-                  }}>
-                    <span style={{ color: '#64748b' }}>
-                      Пробег должен быть больше или равен {lastMileage.meter_value.toLocaleString()} {getUnitLabel(selectedVehicle?.meter_type)}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Кнопка отправки */}
-              <button
-                type="submit"
-                disabled={submitting}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  borderRadius: 12,
-                  border: 'none',
-                  background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
-                  color: 'white',
-                  fontSize: 16,
-                  fontWeight: 600,
-                  cursor: submitting ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.15s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  opacity: submitting ? 0.7 : 1,
-                }}
-                onMouseEnter={(e) => {
-                  if (!submitting) e.currentTarget.style.transform = 'translateY(-1px)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)'
-                }}
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
-                    Отправка...
                   </>
                 ) : (
-                  'Отправить'
+                  'Выберите технику'
                 )}
-              </button>
+              </div>
+            </div>
 
-              {/* Название компании внизу */}
-              {company && (
-                <div style={{
-                  textAlign: 'center',
-                  marginTop: 16,
-                  fontSize: 12,
-                  color: '#94a3b8',
-                  fontWeight: 500,
-                }}>
-                  {company.name}
-                </div>
+            {/* Кнопка отправки */}
+            <button
+              type="submit"
+              disabled={submitting}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: 12,
+                border: 'none',
+                background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
+                color: 'white',
+                fontSize: 16,
+                fontWeight: 600,
+                cursor: submitting ? 'not-allowed' : 'pointer',
+                transition: 'all 0.15s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                opacity: submitting ? 0.7 : 1,
+              }}
+              onMouseEnter={(e) => {
+                if (!submitting) e.currentTarget.style.transform = 'translateY(-1px)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+              }}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                  Отправка...
+                </>
+              ) : (
+                'Отправить'
               )}
-            </form>
-          </>
+            </button>
+          </form>
         )}
       </div>
 

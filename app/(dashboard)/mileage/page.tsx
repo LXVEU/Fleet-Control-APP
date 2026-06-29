@@ -45,6 +45,7 @@ export default function MileagePage() {
   const [search, setSearch] = useState('')
   const [sortField, setSortField] = useState('created_at')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+  const [companyId, setCompanyId] = useState<string | null>(null)
 
   useEffect(() => {
     loadData()
@@ -52,6 +53,7 @@ export default function MileagePage() {
 
   async function loadData() {
     const companyId = await getCompanyId()
+    setCompanyId(companyId)
 
     if (!companyId) {
       setLoading(false)
@@ -187,7 +189,13 @@ export default function MileagePage() {
           </p>
         </div>
         <button
-          onClick={() => window.open('/mileage-add', '_blank')}
+          onClick={() => {
+            if (companyId) {
+              window.open(`/mileage-add?company=${companyId}`, '_blank')
+            } else {
+              window.open('/mileage-add', '_blank')
+            }
+          }}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -390,7 +398,13 @@ export default function MileagePage() {
             Показано {sortedLogs.length} из {logs.length} записей
           </span>
           <button
-            onClick={() => window.open('/mileage-add', '_blank')}
+            onClick={() => {
+              if (companyId) {
+                window.open(`/mileage-add?company=${companyId}`, '_blank')
+              } else {
+                window.open('/mileage-add', '_blank')
+              }
+            }}
             style={{
               fontSize: 12,
               fontWeight: 600,
