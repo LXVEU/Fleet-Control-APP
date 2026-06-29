@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Truck, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
-import { supabase } from '../../lib/supabase'
-import { getCompanyId } from '../../lib/company'
+import { supabase } from '../lib/supabase'
+import { getCompanyId } from '../lib/company'
 
 type Vehicle = {
   id: number
