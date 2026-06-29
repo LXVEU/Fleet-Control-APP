@@ -28,13 +28,23 @@ export async function proxy(req: NextRequest) {
 
   const path = req.nextUrl.pathname
 
-  const publicPaths = ['/login', '/register', '/mileage', '/forgot-password', '/reset-password']
+  // ─── ДОБАВИЛИ /mileage-add В СПИСОК ПУБЛИЧНЫХ СТРАНИЦ ───
+  const publicPaths = [
+    '/login', 
+    '/register', 
+    '/mileage', 
+    '/forgot-password', 
+    '/reset-password',
+    '/mileage-add'  // ← ДОБАВЛЕНО
+  ]
   const isPublic = publicPaths.some(p => path === p)
 
+  // Если пользователь не авторизован и пытается зайти на защищенную страницу
   if (!session && !isPublic) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
+  // Если пользователь авторизован и пытается зайти на страницу входа/регистрации
   if (session && (path === '/login' || path === '/register')) {
     return NextResponse.redirect(new URL('/', req.url))
   }
