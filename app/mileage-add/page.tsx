@@ -6,6 +6,8 @@ import { Truck, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { getCompanyId } from '../lib/company'
 
+export const dynamic = 'force-dynamic'
+
 type Vehicle = {
   id: number
   name: string
@@ -28,7 +30,6 @@ export default function MileageAddPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   
-  // Получаем company_id из URL (если есть)
   const companyIdFromUrl = searchParams.get('company')
   
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
@@ -47,10 +48,8 @@ export default function MileageAddPage() {
 
   useEffect(() => {
     if (companyIdFromUrl) {
-      // Если есть company в URL — используем её
       loadData(companyIdFromUrl)
     } else {
-      // Если нет — пробуем получить из авторизации (для админов)
       loadDataFromAuth()
     }
   }, [companyIdFromUrl])
@@ -75,7 +74,6 @@ export default function MileageAddPage() {
 
   async function loadData(companyId: string) {
     try {
-      // Загружаем информацию о компании
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .select('id, name')
@@ -89,7 +87,6 @@ export default function MileageAddPage() {
         setCompany(companyData)
       }
 
-      // Загружаем технику
       const { data, error } = await supabase
         .from('vehicles')
         .select('id, name, license_plate, meter_type, vehicle_type')
@@ -238,7 +235,6 @@ export default function MileageAddPage() {
       background: '#f1f5f9',
       position: 'relative',
     }}>
-      {/* Градиентный фон */}
       <div style={{
         position: 'fixed',
         inset: 0,
@@ -268,7 +264,6 @@ export default function MileageAddPage() {
         }} />
       </div>
 
-      {/* Карточка формы */}
       <div style={{
         background: 'white',
         borderRadius: 24,
@@ -280,7 +275,6 @@ export default function MileageAddPage() {
         position: 'relative',
         zIndex: 1,
       }}>
-        {/* Логотип */}
         <div style={{ 
           display: 'flex', 
           flexDirection: 'column',
@@ -382,7 +376,6 @@ export default function MileageAddPage() {
               </div>
             )}
 
-            {/* Выбор техники */}
             <div style={{ marginBottom: 20 }}>
               <label style={{ 
                 display: 'block', 
@@ -427,7 +420,6 @@ export default function MileageAddPage() {
               </select>
             </div>
 
-            {/* Последний пробег */}
             {formData.vehicleId && (
               <div style={{
                 padding: '12px 16px',
@@ -458,7 +450,6 @@ export default function MileageAddPage() {
               </div>
             )}
 
-            {/* Пробег */}
             <div style={{ marginBottom: 24 }}>
               <label style={{ 
                 display: 'block', 
@@ -515,7 +506,6 @@ export default function MileageAddPage() {
               </div>
             </div>
 
-            {/* Кнопка отправки */}
             <button
               type="submit"
               disabled={submitting}
