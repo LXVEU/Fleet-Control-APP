@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '../lib/supabase'
 import { getCompanyId } from '../lib/company'
 import KpiCards from '../../components/KpiCards'
@@ -8,7 +9,6 @@ import SmartAlerts from '../../components/SmartAlerts'
 import ExpensesCharts from '../../components/ExpensesCharts'
 import FailureAnalytics from '../../components/FailureAnalytics'
 import LogoutButton from '../../components/LogoutButton'
-import Link from 'next/link'
 
 type Vehicle = {
   id: number
@@ -60,6 +60,7 @@ type RepairCategory = {
 }
 
 export default function Home() {
+  const router = useRouter()
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [documents, setDocuments] = useState<Document[]>([])
   const [mileageLogs, setMileageLogs] = useState<MileageLog[]>([])
@@ -69,9 +70,19 @@ export default function Home() {
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // ─── ПРОВЕРКА АВТОРИЗАЦИИ ───
   useEffect(() => {
-    loadCompanyAndData()
+    checkAuth()
   }, [])
+
+  async function checkAuth() {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      router.push('/login')
+      return
+    }
+    await loadCompanyAndData()
+  }
 
   async function loadCompanyAndData() {
     const id = await getCompanyId()
@@ -146,6 +157,7 @@ export default function Home() {
     setMaintenanceLogs(maintRes.data || [])
     setRepairLogs(repairRes.data || [])
     setRepairCategories(categoryRes.data || [])
+    setLoading(false)
   }
 
   const getCurrentMeter = (v: Vehicle) => {
@@ -305,31 +317,6 @@ export default function Home() {
         color: '#6b7280',
       }}>
         Загрузка...
-      </div>
-    )
-  }
-
-  if (!companyId) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'column',
-        gap: 16,
-      }}>
-        <div style={{
-          fontSize: 20,
-          fontWeight: 600,
-          color: '#0d1117',
-        }}>
-          Нет доступа
-        </div>
-        <div style={{ color: '#6b7280' }}>
-          У вас нет привязанной компании. Обратитесь к администратору.
-        </div>
-        <LogoutButton />
       </div>
     )
   }

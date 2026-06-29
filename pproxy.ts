@@ -1,4 +1,4 @@
-// proxy.ts
+// app/proxy.ts
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
@@ -28,24 +28,23 @@ export async function proxy(req: NextRequest) {
 
   const path = req.nextUrl.pathname
 
-  // ─── ДОБАВИЛИ /mileage-add В СПИСОК ПУБЛИЧНЫХ СТРАНИЦ ───
+  // ─── ПУБЛИЧНЫЕ СТРАНИЦЫ (ДОСТУПНЫ БЕЗ ВХОДА) ───
   const publicPaths = [
-    '/login', 
+    '/login',
     '/register', 
-    '/mileage', 
-    '/forgot-password', 
-    '/reset-password',
-    '/mileage-add'  // ← ДОБАВЛЕНО
+    '/mileage-add',
+    '/forgot-password',
+    '/reset-password'
   ]
   const isPublic = publicPaths.some(p => path === p)
 
-  // Если пользователь не авторизован и пытается зайти на защищенную страницу
+  // ─── ЕСЛИ НЕТ СЕССИИ И СТРАНИЦА НЕ ПУБЛИЧНАЯ → НА ЛОГИН ───
   if (!session && !isPublic) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
-  // Если пользователь авторизован и пытается зайти на страницу входа/регистрации
-  if (session && (path === '/login' || path === '/register')) {
+  // ─── ЕСЛИ ЕСТЬ СЕССИЯ И СТРАНИЦА ЛОГИН → НА ГЛАВНУЮ ───
+  if (session && path === '/login') {
     return NextResponse.redirect(new URL('/', req.url))
   }
 
