@@ -1,11 +1,9 @@
-// app/login/page.tsx
 'use client'
 
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useRouter } from 'next/navigation'
 import { Building2, LogIn, Mail, Lock } from 'lucide-react'
-import Link from 'next/link'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -17,38 +15,29 @@ export default function LoginPage() {
   })
 
   async function handleLogin(e: React.FormEvent) {
-  e.preventDefault()
-  setLoading(true)
-  setError('')
+    e.preventDefault()
+    setLoading(true)
+    setError('')
 
-  try {
-    console.log('1. LOGIN START')
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email.trim(),
+        password: formData.password.trim(),
+      })
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: formData.email.trim(),
-      password: formData.password.trim(),
-    })
+      if (error) {
+        setError(error.message)
+        return
+      }
 
-    console.log('2. LOGIN RESPONSE')
-    console.log('DATA:', data)
-    console.log('ERROR:', error)
-
-    if (error) {
-      console.log('3. LOGIN ERROR BRANCH')
-      setError(error.message)
-      return
+      router.push('/')
+    } catch (err) {
+      console.error('Ошибка входа:', err)
+      setError('Произошла ошибка при входе')
+    } finally {
+      setLoading(false)
     }
-
-    console.log('4. BEFORE ROUTER PUSH')
-    router.push('/')
-    console.log('5. AFTER ROUTER PUSH')
-  } catch (err) {
-    console.error('CRASH:', err)
-    setError(String(err))
-  } finally {
-    setLoading(false)
   }
-}
 
   return (
     <div style={{
@@ -208,32 +197,6 @@ export default function LoginPage() {
             <LogIn size={18} />
           </button>
         </form>
-
-        {/* Ссылка ЗА пределами формы */}
-        <div style={{ textAlign: 'right', marginTop: 12 }}>
-          <Link 
-            href="/forgot-password" 
-            style={{ 
-              color: '#6b7280', 
-              fontSize: 13, 
-              textDecoration: 'none',
-              transition: 'color 0.2s',
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.color = '#005bff'}
-            onMouseLeave={(e) => e.currentTarget.style.color = '#6b7280'}
-          >
-            Забыли пароль?
-          </Link>
-        </div>
-
-        <div style={{ textAlign: 'center', marginTop: 16 }}>
-          <span style={{ color: '#6b7280', fontSize: 14 }}>
-            Нет аккаунта?{' '}
-            <a href="/register" style={{ color: '#005bff', textDecoration: 'none', fontWeight: 600 }}>
-              Зарегистрировать компанию
-            </a>
-          </span>
-        </div>
       </div>
     </div>
   )
