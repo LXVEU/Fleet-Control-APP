@@ -25,7 +25,7 @@ type VehicleAlert = {
 type DocumentAlert = {
   id: number
   vehicle_id: number
-  expiry_date: string
+  expiry_date: string | null  // ← Добавлен null
   document_name?: string
   vehicle?: VehicleAlert
 }
@@ -56,6 +56,9 @@ export default function SmartAlerts({
 }: Props) {
   const [expanded, setExpanded] = useState(false)
 
+  // Фильтруем документы: только те, у которых есть срок действия
+  const validDocuments = documents.filter(doc => doc.expiry_date !== null && doc.expiry_date !== undefined && doc.expiry_date !== '')
+
   return (
     <div style={{ marginTop: 10 }}>
       <div style={{ marginBottom: 16 }}>
@@ -77,13 +80,13 @@ export default function SmartAlerts({
       >
         <UrgentCard data={urgent} expanded={expanded} />
         <UpcomingCard data={upcoming} expanded={expanded} />
-        <DocumentsCard data={documents} expanded={expanded} />
+        <DocumentsCard data={validDocuments} expanded={expanded} />  {/* ← Передаем отфильтрованные документы */}
         <MileageCard data={mileage} expanded={expanded} />
       </div>
 
       {(urgent.length > 4 ||
         upcoming.length > 4 ||
-        documents.length > 4 ||
+        validDocuments.length > 4 ||
         mileage.length > 4) && (
         <div style={{ textAlign: 'center', marginTop: 18 }}>
           <button
@@ -228,41 +231,50 @@ function DocumentsCard({
   const today = new Date()
   const visible = expanded ? data : data.slice(0, 4)
 
+  // Дополнительная фильтрация: только документы с датой окончания
+  const validData = data.filter(d => d.expiry_date)
+
   return (
     <div style={card}>
-      <Header icon={<Shield size={16} color="#ff6b00" />} title="Документы" color="#ff6b00" bg="#fff4ed" count={data.length} />
+      <Header icon={<Shield size={16} color="#ff6b00" />} title="Документы" color="#ff6b00" bg="#fff4ed" count={validData.length} />
 
       <List>
-        {visible.map((d) => {
-          const exp = new Date(d.expiry_date)
-          const days = Math.ceil(
-            (exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-          )
+        {validData.length === 0 ? (
+          <div style={{ padding: 20, textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>
+            Нет активных документов
+          </div>
+        ) : (
+          visible.map((d) => {
+            const exp = new Date(d.expiry_date!)
+            const days = Math.ceil(
+              (exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+            )
 
-          const isCritical = days <= 0
+            const isCritical = days <= 0
 
-          return (
-            <Item
-              key={d.id}
-              bg={isCritical ? '#fff1f1' : '#fff'}
-              border={isCritical ? '#ffd0d0' : '#f3f4f6'}
-            >
-              <div style={row}>
-                <div>
-                  <div style={title}>{d.vehicle?.name}</div>
-                  <div style={sub}>{d.vehicle?.license_plate}</div>
-                  <div style={small}>{d.document_name}</div>
+            return (
+              <Item
+                key={d.id}
+                bg={isCritical ? '#fff1f1' : '#fff'}
+                border={isCritical ? '#ffd0d0' : '#f3f4f6'}
+              >
+                <div style={row}>
+                  <div>
+                    <div style={title}>{d.vehicle?.name}</div>
+                    <div style={sub}>{d.vehicle?.license_plate}</div>
+                    <div style={small}>{d.document_name}</div>
+                  </div>
+
+                  {isCritical ? (
+                    <div style={badgeRed}>CRITICAL</div>
+                  ) : (
+                    <div style={rightValue}>{days} д.</div>
+                  )}
                 </div>
-
-                {isCritical ? (
-                  <div style={badgeRed}>CRITICAL</div>
-                ) : (
-                  <div style={rightValue}>{days} д.</div>
-                )}
-              </div>
-            </Item>
-          )
-        })}
+              </Item>
+            )
+          })
+        )}
       </List>
     </div>
   )
