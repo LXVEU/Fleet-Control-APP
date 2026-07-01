@@ -162,3 +162,60 @@ body {
   0% { transform: translate(0, 0) scale(1); }
   100% { transform: translate(40px, -30px) scale(1.15); }
 }
+
+/* ============================================================
+   УСИЛЕННЫЕ КАРТОЧКИ ДЛЯ WINDOWS
+   ============================================================ */
+
+/* 1. Делаем карточки более контрастными и с четкими границами */
+.KpiCards > div,
+.SmartAlerts > div,
+.ExpensesCharts > div,
+.FailureAnalytics > div,
+.card,
+[class*="card"],
+[class*="Card"],
+div[style*="border-radius"] {
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* 2. Таблицы — делаем фон менее прозрачным */
+table {
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+thead, tbody, tr, td, th {
+  background: transparent !important;
+}
+
+/* 3. Строки таблицы при наведении */
+tr:hover {
+  background: rgba(0, 0, 0, 0.02) !important;
+}
+
+/* 4. Кнопки и интерактивные элементы — более четкие */
+button {
+  transition: all 0.2s ease !important;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* 5. Для Windows — усиленный фон */
+@media screen and (min-width: 0px) {
+  body {
+    background: #f3f4f6 !important;
+  }
+  
+  .gradient-bg-blobs {
+    background: #f3f4f6 !important;
+  }
+}
