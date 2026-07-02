@@ -54,13 +54,11 @@ export default function DashboardLayout({
     return pathname.startsWith(href)
   }
 
-  // Загружаем данные компании и пользователя
   useEffect(() => {
     async function loadData() {
       const companyId = await getCompanyId()
       
       if (companyId) {
-        // Загружаем компанию
         const { data: companyData } = await supabase
           .from('companies')
           .select('id, name')
@@ -69,7 +67,6 @@ export default function DashboardLayout({
         
         setCompany(companyData)
 
-        // Загружаем профиль пользователя
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
           const { data: profileData } = await supabase
@@ -87,7 +84,6 @@ export default function DashboardLayout({
     loadData()
   }, [])
 
-  // Определяем инициалы для аватарки
   const getInitials = () => {
     if (!userProfile?.full_name) return 'U'
     const names = userProfile.full_name.split(' ')
@@ -98,94 +94,75 @@ export default function DashboardLayout({
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', position: 'relative' }}>
-      {/* ─── ПРИГЛУШЕННЫЙ КРАСНО-ЖЕЛТЫЙ ГРАДИЕНТ ─── */}
-      <div
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: -1,
-          background: '#f3f4f6',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Желто-оранжевый градиент сверху слева */}
-        <div
-          style={{
-            position: 'absolute',
-            top: -100,
-            left: -100,
-            width: 700,
-            height: 700,
-            borderRadius: '50%',
-            background:
-              'radial-gradient(circle, rgba(255,196,80,0.30), transparent 70%)',
-            filter: 'blur(80px)',
-            animation: 'floatLeft 12s ease-in-out infinite alternate',
-          }}
-        />
+    <div style={{ 
+      display: 'flex', 
+      minHeight: '100vh', 
+      position: 'relative',
+      background: '#f0f2f5', // 👈 ТОТ ЖЕ ФОН ЧТО НА ЛОГИНЕ
+    }}>
+      {/* ─── ФОН КАК НА СТРАНИЦЕ ЛОГИНА ─── */}
+      <div style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 0,
+        overflow: 'hidden',
+        pointerEvents: 'none',
+      }}>
+        {/* Жёлтый градиент сверху слева */}
+        <div style={{
+          position: 'absolute',
+          top: -130,
+          left: -130,
+          width: 700,
+          height: 600,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(255,210,60,0.32) 0%, rgba(255,160,40,0.18) 45%, transparent 75%)',
+          filter: 'blur(72px)',
+          animation: 'floatLeft 12s ease-in-out infinite alternate',
+        }} />
         
-        {/* Красно-оранжевый градиент снизу справа */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: -150,
-            right: -100,
-            width: 650,
-            height: 650,
-            borderRadius: '50%',
-            background:
-              'radial-gradient(circle, rgba(255,90,60,0.20), transparent 70%)',
-            filter: 'blur(90px)',
-            animation: 'floatRight 10s ease-in-out infinite alternate',
-          }}
-        />
-        
-        {/* Центральный теплый градиент */}
-        <div
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: 500,
-            height: 500,
-            borderRadius: '50%',
-            background:
-              'radial-gradient(circle, rgba(255,200,150,0.15), transparent 70%)',
-            filter: 'blur(100px)',
-            animation: 'floatCenter 15s ease-in-out infinite alternate',
-          }}
-        />
+        {/* Красный градиент снизу справа */}
+        <div style={{
+          position: 'absolute',
+          bottom: -160,
+          right: -80,
+          width: 600,
+          height: 560,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(255,80,50,0.22) 0%, rgba(255,120,60,0.14) 45%, transparent 75%)',
+          filter: 'blur(80px)',
+          animation: 'floatRight 10s ease-in-out infinite alternate',
+        }} />
+
+        {/* Дополнительный голубой градиент (для баланса) */}
+        <div style={{
+          position: 'absolute',
+          top: '40%',
+          left: '30%',
+          width: 400,
+          height: 400,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(0,91,255,0.06) 0%, transparent 70%)',
+          filter: 'blur(80px)',
+          animation: 'floatCenter 15s ease-in-out infinite alternate',
+        }} />
       </div>
 
       {/* ─── АНИМАЦИИ ─── */}
       <style>{`
         @keyframes floatLeft {
-          0% {
-            transform: translate(0, 0) scale(1);
-          }
-          100% {
-            transform: translate(60px, 40px) scale(1.1);
-          }
+          0% { transform: translate(0, 0) scale(1); }
+          100% { transform: translate(60px, 40px) scale(1.1); }
         }
 
         @keyframes floatRight {
-          0% {
-            transform: translate(0, 0) scale(1);
-          }
-          100% {
-            transform: translate(-50px, -30px) scale(1.15);
-          }
+          0% { transform: translate(0, 0) scale(1); }
+          100% { transform: translate(-50px, -30px) scale(1.15); }
         }
 
         @keyframes floatCenter {
-          0% {
-            transform: translate(-50%, -50%) scale(1);
-          }
-          100% {
-            transform: translate(-50%, -50%) scale(1.2);
-          }
+          0% { transform: translate(0, 0) scale(1); }
+          100% { transform: translate(-30px, 20px) scale(1.2); }
         }
       `}</style>
 
@@ -220,7 +197,6 @@ export default function DashboardLayout({
             gap: 12,
           }}
         >
-          {/* Иконка-логотип */}
           <div
             style={{
               width: 40,
@@ -551,7 +527,6 @@ export default function DashboardLayout({
               })}
             </div>
 
-            {/* Профиль в мобильном меню */}
             <div
               style={{
                 marginTop: 24,
